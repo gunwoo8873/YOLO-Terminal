@@ -1,6 +1,7 @@
 # !/bin/env bash
 
-GitConfigPath="C:/Users/gunwo/.gitconfig"
+USERNAME=$(whoami)
+GitConfigPath="C:/Users/${USERNAME}/.gitconfig"
 ExitPath="./function/Exit.sh"
 
 function ReadFile() {
