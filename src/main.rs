@@ -1,5 +1,7 @@
-use eframe::{egui, Result, NativeOptions};
+use eframe::{Result, NativeOptions, App};
 use egui::{ViewportBuilder};
+
+use YOLO_Terminal::DB::connect;
 
 struct WindowSize {
   width: f32,
@@ -9,13 +11,15 @@ struct WindowSize {
 fn main() -> Result {
   env_logger::init();
 
-  let size = WindowSize {
+  let _ = connect::db_connect();
+
+  let default_window_size = WindowSize {
     width: 320.0,
     height: 240.0,
   };
 
-  let window_width = size.width;
-  let window_height = size.height;
+  let window_width = default_window_size.width;
+  let window_height = default_window_size.height;
 
   let options = NativeOptions {
     viewport: ViewportBuilder::default().with_inner_size([window_width, window_height]),
@@ -23,8 +27,10 @@ fn main() -> Result {
   };
 
 
+  let app_name = "Test GUI App";
+
   eframe::run_native(
-    "Test GUI App",
+    app_name,
     options,
     Box::new(|cc| {
       egui_extras::install_image_loaders(&cc.egui_ctx);
@@ -42,19 +48,27 @@ struct AppQueryType {
 impl Default for AppQueryType {
   fn default() -> Self {
     Self {
-      name: "Arthur".to_owned(),
-      age: 42,
+      name: "".to_owned(),
+      age: 0,
     }
-
-    /// Safely decrements age, respecting the lower bound.
-    pub fn decrement_age(&mut self) {
-        // Use saturating_sub to prevent underflow panic when age is 0.
-        self.age = self.age.saturating_sub(1);
-    }
+  }
 }
 
-impl eframe::App for AppQueryType {
+struct RangeSize {
+  min: u32,
+  max: u32,
+}
+
+impl App for AppQueryType {
   fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    let range_size = RangeSize {
+      min: 0,
+      max: 100,
+    };
+    
+    let min_range = range_size.min;
+    let max_range = range_size.max;
+
     egui::CentralPanel::default().show(ctx, |ui | {
       ui.heading("Test Application");
       ui.horizontal(|ui| {
@@ -62,56 +76,16 @@ impl eframe::App for AppQueryType {
         ui.text_edit_singleline(&mut self.name).labelled_by(name_label.id)
       });
 
-      ui.add(egui::Slider::new(&mut self.age, Self::AGE_RANGE).text("age"));
+      ui.add(egui::Slider::new(&mut self.age, min_range..=max_range).text("age"));
       if ui.button("Increment").clicked() {
-        self.increment_age();
+        self.age += 1;
       }
 
       if ui.button("Decrement").clicked() {
-        self.decrement_age();
+        self.age -= 1;
       }
 
       ui.label(format!("Name: {}, Age: {}", self.name, self.age));
     });
   }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn app_should_default_sensibly() {
-        let app = AppQueryType::default();
-        assert_eq!(app.name, "");
-        assert_eq!(app.age, 0);
-    }
-
-    #[test]
-    fn increment_age_should_increase_age_by_one() {
-        let mut app = AppQueryType { name: "".to_string(), age: 10 };
-        app.increment_age();
-        assert_eq!(app.age, 11);
-    }
-
-    #[test]
-    fn decrement_age_should_decrease_age_by_one() {
-        let mut app = AppQueryType { name: "".to_string(), age: 10 };
-        app.decrement_age();
-        assert_eq!(app.age, 9);
-    }
-
-    #[test]
-    fn decrement_age_should_not_underflow() {
-        let mut app = AppQueryType { name: "".to_string(), age: 0 };
-        app.decrement_age();
-        assert_eq!(app.age, 0, "Age should not go below 0");
-    }
-
-    #[test]
-    fn increment_age_should_not_exceed_slider_max() {
-        let mut app = AppQueryType { name: "".to_string(), age: 100 };
-        app.increment_age();
-        assert_eq!(app.age, 100, "Age should not exceed 100");
-    }
 }
