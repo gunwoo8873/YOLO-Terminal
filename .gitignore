@@ -1,5 +1,5 @@
-
-
-# Added by cargo
-
+# Cargo Process Rutime dir
 /target
+
+# Access token file
+.env
